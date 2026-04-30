@@ -1,0 +1,1605 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Crash Alert — Vehicle Safety System</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+html { scroll-behavior: smooth; font-size: 16px; }
+
+:root {
+  --g0: #ffffff;
+  --g1: #f7f7f7;
+  --g2: #efefef;
+  --g3: #e4e4e4;
+  --g4: #c8c8c8;
+  --g5: #999999;
+  --g6: #666666;
+  --g7: #333333;
+  --g8: #1a1a1a;
+  --g9: #0d0d0d;
+  --red: #c0392b;
+  --red-l: #e74c3c;
+  --red-xl: rgba(192,57,43,0.08);
+  --red-b: rgba(192,57,43,0.18);
+  --border: rgba(0,0,0,0.07);
+  --border2: rgba(0,0,0,0.11);
+  --shadow-sm: 0 1px 4px rgba(0,0,0,0.06);
+  --shadow-md: 0 4px 20px rgba(0,0,0,0.07);
+  --shadow-lg: 0 12px 48px rgba(0,0,0,0.09);
+  --mono: 'JetBrains Mono', monospace;
+  --sans: 'Inter', sans-serif;
+}
+
+body {
+  font-family: var(--sans);
+  background: var(--g1);
+  color: var(--g8);
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ─── SCROLLBAR ─── */
+::-webkit-scrollbar { width: 4px; }
+::-webkit-scrollbar-track { background: var(--g2); }
+::-webkit-scrollbar-thumb { background: var(--red); border-radius: 2px; }
+
+/* ─── PAGE LOADER ─── */
+#loader {
+  position: fixed; inset: 0; z-index: 9999;
+  background: var(--g9);
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  gap: 24px;
+  transition: opacity 0.6s ease, visibility 0.6s ease;
+}
+#loader.hidden { opacity: 0; visibility: hidden; }
+
+.loader-logo {
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.3);
+}
+
+.loader-bar-wrap {
+  width: 200px; height: 1px;
+  background: rgba(255,255,255,0.1);
+  border-radius: 1px;
+  overflow: hidden;
+}
+.loader-bar {
+  height: 100%; width: 0%;
+  background: var(--red);
+  border-radius: 1px;
+  animation: loadBar 1.8s cubic-bezier(0.4,0,0.2,1) forwards;
+}
+@keyframes loadBar { 0%{width:0%} 60%{width:70%} 100%{width:100%} }
+
+/* ─── NAV ─── */
+nav {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+  height: 56px;
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0 48px;
+  background: rgba(247,247,247,0.88);
+  backdrop-filter: blur(20px) saturate(1.4);
+  border-bottom: 1px solid var(--border);
+  transition: box-shadow 0.3s ease;
+}
+nav.scrolled { box-shadow: var(--shadow-md); }
+
+.nav-logo {
+  font-family: var(--mono);
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--g8);
+  display: flex; align-items: center; gap: 8px;
+}
+.nav-logo-dot {
+  width: 6px; height: 6px;
+  background: var(--red);
+  border-radius: 50%;
+  animation: breathe 2s ease-in-out infinite;
+}
+@keyframes breathe { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:0.4;transform:scale(0.7)} }
+
+.nav-links { display: flex; gap: 32px; list-style: none; }
+.nav-links a {
+  font-size: 12px; font-weight: 500;
+  color: var(--g5); text-decoration: none;
+  letter-spacing: 0.02em;
+  transition: color 0.2s;
+  position: relative;
+}
+.nav-links a::after {
+  content: ''; position: absolute;
+  bottom: -2px; left: 0; right: 0;
+  height: 1px; background: var(--red);
+  transform: scaleX(0); transform-origin: right;
+  transition: transform 0.3s ease;
+}
+.nav-links a:hover { color: var(--g8); }
+.nav-links a:hover::after { transform: scaleX(1); transform-origin: left; }
+
+.nav-pill {
+  font-family: var(--mono);
+  font-size: 10px; font-weight: 400;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--red);
+  border: 1px solid var(--red-b);
+  background: var(--red-xl);
+  padding: 5px 14px;
+  border-radius: 100px;
+  display: flex; align-items: center; gap: 7px;
+}
+.nav-pill-dot {
+  width: 5px; height: 5px;
+  background: var(--red); border-radius: 50%;
+  animation: breathe 1.4s ease-in-out infinite;
+}
+
+/* ─── HERO ─── */
+.hero {
+  min-height: 100vh;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  padding-top: 56px;
+  position: relative;
+  overflow: hidden;
+}
+
+/* Subtle dot grid */
+.hero::before {
+  content: '';
+  position: absolute; inset: 0;
+  background-image: radial-gradient(circle, var(--g4) 1px, transparent 1px);
+  background-size: 28px 28px;
+  opacity: 0.45;
+}
+
+/* Gradient orb */
+.hero-orb {
+  position: absolute;
+  width: 600px; height: 600px;
+  right: -100px; top: 50%;
+  transform: translateY(-50%);
+  background: radial-gradient(circle, rgba(192,57,43,0.05) 0%, transparent 70%);
+  border-radius: 50%;
+  animation: orbPulse 6s ease-in-out infinite;
+  pointer-events: none;
+}
+@keyframes orbPulse { 0%,100%{transform:translateY(-50%) scale(1)} 50%{transform:translateY(-50%) scale(1.08)} }
+
+.hero-left {
+  padding: 0 40px 0 80px;
+  display: flex; flex-direction: column; justify-content: center;
+  position: relative; z-index: 2;
+}
+
+/* Staggered entrance */
+.hero-left > * {
+  opacity: 0;
+  transform: translateY(20px);
+  animation: enterUp 0.7s ease forwards;
+}
+.hero-left > *:nth-child(1) { animation-delay: 0.3s; }
+.hero-left > *:nth-child(2) { animation-delay: 0.45s; }
+.hero-left > *:nth-child(3) { animation-delay: 0.6s; }
+.hero-left > *:nth-child(4) { animation-delay: 0.75s; }
+.hero-left > *:nth-child(5) { animation-delay: 0.9s; }
+
+@keyframes enterUp {
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.hero-tag {
+  font-family: var(--mono);
+  font-size: 10px; font-weight: 400;
+  letter-spacing: 0.2em; text-transform: uppercase;
+  color: var(--red);
+  display: flex; align-items: center; gap: 10px;
+  margin-bottom: 20px;
+}
+.hero-tag::before {
+  content: ''; width: 24px; height: 1px;
+  background: var(--red); opacity: 0.5;
+}
+
+.hero-h1 {
+  font-size: clamp(52px, 6.5vw, 92px);
+  font-weight: 700;
+  line-height: 1.0;
+  letter-spacing: -2.5px;
+  color: var(--g9);
+  margin-bottom: 6px;
+}
+.hero-h1 .muted { color: var(--g4); font-weight: 300; }
+.hero-h1 .accent { color: var(--red); }
+
+.hero-p {
+  font-size: 15px; font-weight: 400;
+  color: var(--g5); line-height: 1.7;
+  max-width: 420px; margin: 24px 0 40px;
+}
+
+.hero-actions { display: flex; gap: 12px; flex-wrap: wrap; }
+
+.btn-solid {
+  background: var(--g9); color: var(--g0);
+  padding: 12px 28px; border-radius: 6px;
+  font-size: 13px; font-weight: 600;
+  text-decoration: none; letter-spacing: 0.02em;
+  border: 1px solid var(--g9);
+  transition: all 0.25s ease;
+  position: relative; overflow: hidden;
+}
+.btn-solid::after {
+  content: ''; position: absolute;
+  inset: 0; background: var(--red);
+  transform: translateX(-101%);
+  transition: transform 0.3s ease;
+}
+.btn-solid:hover::after { transform: translateX(0); }
+.btn-solid span { position: relative; z-index: 1; }
+
+.btn-ghost {
+  background: transparent; color: var(--g6);
+  padding: 12px 28px; border-radius: 6px;
+  font-size: 13px; font-weight: 500;
+  text-decoration: none; letter-spacing: 0.02em;
+  border: 1px solid var(--border2);
+  transition: all 0.25s ease;
+}
+.btn-ghost:hover { border-color: var(--g7); color: var(--g8); }
+
+.hero-stats {
+  display: flex; gap: 0;
+  margin-top: 52px; padding-top: 36px;
+  border-top: 1px solid var(--border);
+}
+.hstat {
+  flex: 1; padding-right: 24px;
+  border-right: 1px solid var(--border);
+  margin-right: 24px;
+}
+.hstat:last-child { border-right: none; margin-right: 0; padding-right: 0; }
+.hstat-n {
+  font-size: 32px; font-weight: 700;
+  letter-spacing: -1.5px; color: var(--g9);
+  display: block; line-height: 1;
+}
+.hstat-n em { font-style: normal; color: var(--red); }
+.hstat-l {
+  font-family: var(--mono);
+  font-size: 10px; color: var(--g5);
+  text-transform: uppercase; letter-spacing: 0.1em;
+  margin-top: 5px; display: block;
+}
+
+/* ─── HERO RIGHT — DEVICE ─── */
+.hero-right {
+  padding: 0 80px 0 40px;
+  display: flex; align-items: center; justify-content: center;
+  position: relative; z-index: 2;
+}
+
+.device {
+  width: 100%; max-width: 420px;
+  background: var(--g0);
+  border: 1px solid var(--border2);
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: var(--shadow-lg);
+  opacity: 0;
+  animation: enterUp 0.8s 0.5s ease forwards, floatDevice 7s 1.3s ease-in-out infinite;
+}
+@keyframes floatDevice {
+  0%,100% { transform: translateY(0px); }
+  50% { transform: translateY(-10px); }
+}
+
+.dev-bar {
+  background: var(--g2);
+  padding: 10px 16px;
+  display: flex; justify-content: space-between; align-items: center;
+  border-bottom: 1px solid var(--border);
+}
+.dev-bar-title {
+  font-family: var(--mono);
+  font-size: 9px; letter-spacing: 0.15em;
+  text-transform: uppercase; color: var(--g5);
+}
+.dev-live {
+  display: flex; align-items: center; gap: 5px;
+  font-family: var(--mono);
+  font-size: 9px; color: #2e7d32;
+}
+.dev-live::before {
+  content: ''; width: 5px; height: 5px;
+  background: #4caf50; border-radius: 50%;
+  animation: breathe 1.8s infinite;
+}
+
+/* Accel */
+.dev-accel { padding: 16px; border-bottom: 1px solid var(--border); }
+.dev-section-label {
+  font-family: var(--mono);
+  font-size: 9px; letter-spacing: 0.15em;
+  text-transform: uppercase; color: var(--g4);
+  margin-bottom: 12px;
+}
+.axis-row {
+  display: flex; align-items: center; gap: 10px;
+  margin-bottom: 8px;
+}
+.axis-row:last-child { margin-bottom: 0; }
+.axis-lbl {
+  font-family: var(--mono);
+  font-size: 11px; font-weight: 500;
+  color: var(--g6); width: 10px;
+}
+.axis-track {
+  flex: 1; height: 4px;
+  background: var(--g2); border-radius: 2px; overflow: hidden;
+}
+.axis-fill {
+  height: 100%; border-radius: 2px;
+  transition: width 0.5s cubic-bezier(0.4,0,0.2,1);
+}
+.ax { background: var(--red); }
+.ay { background: #1a6faa; }
+.az { background: #1a7a3c; }
+.axis-num {
+  font-family: var(--mono);
+  font-size: 11px; color: var(--g7);
+  width: 32px; text-align: right;
+}
+
+/* GPS */
+.dev-gps { padding: 14px 16px; border-bottom: 1px solid var(--border); }
+.gps-row { display: flex; gap: 10px; margin-bottom: 8px; }
+.gps-cell {
+  flex: 1; background: var(--g2);
+  border: 1px solid var(--border);
+  border-radius: 6px; padding: 9px 10px;
+}
+.gps-cell-lbl {
+  font-family: var(--mono);
+  font-size: 8px; letter-spacing: 0.1em;
+  text-transform: uppercase; color: var(--g4);
+  margin-bottom: 3px;
+}
+.gps-cell-val {
+  font-family: var(--mono);
+  font-size: 12px; font-weight: 500; color: var(--g8);
+}
+.gps-maps {
+  background: var(--g2); border: 1px solid var(--border);
+  border-radius: 5px; padding: 7px 10px;
+  font-family: var(--mono); font-size: 10px; color: #1a5fa8;
+  display: flex; align-items: center; gap: 6px;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+
+/* Alert */
+.dev-alert { padding: 14px 16px; }
+.alert-card {
+  border-radius: 8px; padding: 12px 14px;
+  background: var(--g2); border: 1px solid var(--border);
+  transition: all 0.4s ease;
+}
+.alert-card.triggered {
+  background: rgba(192,57,43,0.07);
+  border-color: rgba(192,57,43,0.25);
+  animation: alertShake 0.4s ease;
+}
+@keyframes alertShake {
+  0%,100%{transform:translateX(0)}
+  20%{transform:translateX(-4px)}
+  40%{transform:translateX(4px)}
+  60%{transform:translateX(-2px)}
+  80%{transform:translateX(2px)}
+}
+.alert-head {
+  font-family: var(--mono);
+  font-size: 10px; font-weight: 500;
+  letter-spacing: 0.08em; margin-bottom: 3px;
+  transition: color 0.3s;
+}
+.alert-card.triggered .alert-head { color: var(--red); }
+.alert-sub {
+  font-size: 11px; color: var(--g5); line-height: 1.4;
+}
+.sms-confirmed {
+  font-family: var(--mono);
+  font-size: 10px; color: #2e7d32;
+  margin-top: 8px;
+  display: none; align-items: center; gap: 6px;
+}
+.sms-confirmed.show { display: flex; }
+.sms-confirmed::before {
+  content: '✓'; width: 14px; height: 14px;
+  background: rgba(46,125,50,0.1);
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 9px; color: #2e7d32; flex-shrink: 0;
+}
+
+/* ─── SECTIONS ─── */
+section { padding: 100px 80px; }
+
+.stag {
+  font-family: var(--mono);
+  font-size: 10px; font-weight: 400;
+  letter-spacing: 0.2em; text-transform: uppercase;
+  color: var(--red); margin-bottom: 14px;
+  display: flex; align-items: center; gap: 10px;
+}
+.stag::before { content: ''; width: 16px; height: 1px; background: var(--red); opacity: 0.5; }
+
+.sh {
+  font-size: clamp(36px, 4.5vw, 56px);
+  font-weight: 700; letter-spacing: -2px;
+  line-height: 1.05; color: var(--g9);
+  margin-bottom: 16px;
+}
+.sh .lt { font-weight: 300; color: var(--g4); }
+
+.sp {
+  font-size: 15px; color: var(--g5);
+  line-height: 1.7; max-width: 500px;
+}
+
+/* ─── REVEAL ANIMATIONS ─── */
+.r { opacity: 0; transform: translateY(28px); transition: opacity 0.6s ease, transform 0.6s ease; }
+.r.up { opacity: 1; transform: translateY(0); }
+.r.delay-1 { transition-delay: 0.1s; }
+.r.delay-2 { transition-delay: 0.2s; }
+.r.delay-3 { transition-delay: 0.3s; }
+.r.delay-4 { transition-delay: 0.4s; }
+
+.r-left { opacity: 0; transform: translateX(-24px); transition: opacity 0.6s ease, transform 0.6s ease; }
+.r-left.up { opacity: 1; transform: translateX(0); }
+
+.r-right { opacity: 0; transform: translateX(24px); transition: opacity 0.6s ease, transform 0.6s ease; }
+.r-right.up { opacity: 1; transform: translateX(0); }
+
+/* ─── PROBLEM ─── */
+.problem { background: var(--g2); }
+
+.prob-layout {
+  display: grid; grid-template-columns: 1fr 1fr;
+  gap: 60px; align-items: start;
+  margin-top: 52px;
+}
+
+.prob-items { display: flex; flex-direction: column; gap: 12px; }
+
+.prob-item {
+  background: var(--g0);
+  border: 1px solid var(--border);
+  border-radius: 10px; padding: 20px;
+  display: flex; gap: 16px; align-items: flex-start;
+  transition: transform 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease;
+  cursor: default;
+}
+.prob-item:hover {
+  transform: translateX(5px);
+  box-shadow: var(--shadow-md);
+  border-color: var(--red-b);
+}
+.prob-item-n {
+  font-size: 28px; font-weight: 700;
+  color: rgba(192,57,43,0.12);
+  line-height: 1; flex-shrink: 0;
+  font-variant-numeric: tabular-nums;
+}
+.prob-item h4 { font-size: 14px; font-weight: 600; margin-bottom: 4px; }
+.prob-item p { font-size: 13px; color: var(--g5); line-height: 1.55; }
+
+.sol-card {
+  background: var(--g0);
+  border: 1px solid var(--border);
+  border-radius: 10px; overflow: hidden;
+  box-shadow: var(--shadow-md);
+}
+.sol-card-head {
+  background: var(--red-xl);
+  border-bottom: 1px solid var(--red-b);
+  padding: 13px 20px;
+  font-family: var(--mono);
+  font-size: 10px; font-weight: 500;
+  letter-spacing: 0.15em; text-transform: uppercase;
+  color: var(--red);
+}
+.sol-card-body { padding: 20px; }
+.sol-list { list-style: none; display: flex; flex-direction: column; gap: 12px; }
+.sol-list li {
+  font-size: 13px; color: var(--g6);
+  line-height: 1.55; display: flex; gap: 10px; align-items: flex-start;
+}
+.sol-list li::before { content: '—'; color: var(--red); flex-shrink: 0; font-weight: 300; }
+
+/* ─── FLOW ─── */
+.flow { background: var(--g1); }
+
+.flow-steps {
+  display: grid; grid-template-columns: repeat(4, 1fr);
+  gap: 1px; background: var(--border);
+  border: 1px solid var(--border);
+  border-radius: 12px; overflow: hidden;
+  margin-top: 52px;
+}
+
+.flow-step {
+  background: var(--g0); padding: 28px 24px;
+  position: relative;
+  transition: background 0.3s ease;
+  cursor: default;
+}
+.flow-step:hover { background: var(--g1); }
+.flow-step-hover-bar {
+  position: absolute; top: 0; left: 0; right: 0;
+  height: 2px; background: var(--red);
+  transform: scaleX(0); transform-origin: left;
+  transition: transform 0.35s ease;
+}
+.flow-step:hover .flow-step-hover-bar { transform: scaleX(1); }
+
+.flow-step-n {
+  font-family: var(--mono);
+  font-size: 11px; font-weight: 500;
+  color: var(--g4); margin-bottom: 16px;
+  letter-spacing: 0.05em;
+}
+.flow-step-icon { font-size: 26px; margin-bottom: 14px; display: block; }
+.flow-step h3 { font-size: 14px; font-weight: 600; margin-bottom: 8px; letter-spacing: -0.3px; }
+.flow-step p { font-size: 12px; color: var(--g5); line-height: 1.55; }
+
+/* ─── HARDWARE ─── */
+.hardware { background: var(--g2); }
+
+.hw-head {
+  display: grid; grid-template-columns: 1fr 1fr;
+  gap: 60px; align-items: end; margin-bottom: 44px;
+}
+
+.hw-grid {
+  display: grid; grid-template-columns: repeat(3, 1fr);
+  gap: 14px;
+}
+
+.hw-card {
+  background: var(--g0);
+  border: 1px solid var(--border);
+  border-radius: 10px; padding: 22px 18px;
+  position: relative; overflow: hidden;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  cursor: default;
+}
+.hw-card::before {
+  content: '';
+  position: absolute; top: 0; left: 0; right: 0;
+  height: 2px;
+  transform: scaleX(0); transform-origin: left;
+  transition: transform 0.35s ease;
+}
+.hw-card:hover { transform: translateY(-3px); box-shadow: var(--shadow-lg); }
+.hw-card:hover::before { transform: scaleX(1); }
+
+.hw-card.c1::before { background: var(--red); }
+.hw-card.c2::before { background: #1a6faa; }
+.hw-card.c3::before { background: #1a7a3c; }
+.hw-card.c4::before { background: #b07d00; }
+.hw-card.c5::before { background: #7b3cc4; }
+.hw-card.c6::before { background: #c46b00; }
+
+.hw-icon { font-size: 26px; margin-bottom: 12px; display: block; }
+.hw-name { font-size: 14px; font-weight: 600; margin-bottom: 6px; }
+.hw-chip {
+  font-family: var(--mono);
+  font-size: 9px; font-weight: 400;
+  letter-spacing: 0.1em; text-transform: uppercase;
+  color: var(--red); background: var(--red-xl);
+  border: 1px solid var(--red-b);
+  padding: 2px 8px; border-radius: 3px;
+  display: inline-block; margin-bottom: 9px;
+}
+.hw-desc { font-size: 12px; color: var(--g5); line-height: 1.55; }
+
+/* ─── PINS ─── */
+.pins { background: var(--g1); }
+
+.pins-layout {
+  display: grid; grid-template-columns: 1fr 1fr;
+  gap: 40px; margin-top: 48px;
+}
+
+.pin-table {
+  background: var(--g0);
+  border: 1px solid var(--border);
+  border-radius: 10px; overflow: hidden;
+  box-shadow: var(--shadow-sm);
+}
+.pin-thead {
+  background: var(--g2);
+  display: grid; grid-template-columns: 1.4fr 1fr 0.8fr;
+  padding: 10px 16px;
+  border-bottom: 1px solid var(--border);
+  font-family: var(--mono);
+  font-size: 9px; letter-spacing: 0.12em;
+  text-transform: uppercase; color: var(--g5);
+}
+.pin-row {
+  display: grid; grid-template-columns: 1.4fr 1fr 0.8fr;
+  padding: 11px 16px; align-items: center;
+  border-bottom: 1px solid var(--border);
+  transition: background 0.2s;
+}
+.pin-row:last-child { border-bottom: none; }
+.pin-row:hover { background: rgba(192,57,43,0.03); }
+.pin-comp { display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 500; }
+.pin-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
+.pin-sig { font-family: var(--mono); font-size: 11px; color: var(--g5); }
+.pin-num {
+  font-family: var(--mono);
+  font-size: 11px; font-weight: 500;
+  color: var(--red); background: var(--red-xl);
+  padding: 3px 9px; border-radius: 4px;
+  display: inline-block;
+}
+
+.code-block {
+  background: var(--g0);
+  border: 1px solid var(--border);
+  border-radius: 10px; overflow: hidden;
+  box-shadow: var(--shadow-sm);
+}
+.cb-bar {
+  background: var(--g2);
+  padding: 9px 14px;
+  display: flex; align-items: center; gap: 8px;
+  border-bottom: 1px solid var(--border);
+}
+.cb-dots { display: flex; gap: 5px; }
+.cb-dots span { width: 9px; height: 9px; border-radius: 50%; }
+.d-r { background: #ff5f57; } .d-y { background: #ffbd2e; } .d-g { background: #28c840; }
+.cb-fname { font-family: var(--mono); font-size: 11px; color: var(--g5); }
+.cb-code {
+  padding: 18px; font-family: var(--mono);
+  font-size: 11.5px; line-height: 1.85; color: var(--g6);
+  overflow-x: auto;
+}
+.ck { color: #7c3aed; } .cf { color: #0a7c3e; }
+.cn { color: #1a5fa8; } .cm { color: #aaa; font-style: italic; }
+.cs { color: #8b6800; } .ct { color: #0077aa; } .cr { color: var(--red); }
+
+/* ─── FIRMWARE ─── */
+.firmware { background: var(--g2); }
+
+.fw-grid {
+  display: grid; grid-template-columns: 1fr 1fr;
+  gap: 16px; margin-top: 48px;
+}
+
+/* ─── SMS ─── */
+.sms { background: var(--g1); }
+
+.sms-layout {
+  display: grid; grid-template-columns: 1fr 1fr;
+  gap: 48px; align-items: start; margin-top: 48px;
+}
+
+.timeline { display: flex; flex-direction: column; }
+
+.tl-item {
+  display: flex; gap: 16px;
+  padding-bottom: 24px;
+  position: relative;
+}
+.tl-item:last-child { padding-bottom: 0; }
+.tl-item:last-child .tl-line { display: none; }
+
+.tl-left { display: flex; flex-direction: column; align-items: center; flex-shrink: 0; }
+.tl-num {
+  width: 30px; height: 30px;
+  background: var(--red-xl);
+  border: 1px solid var(--red-b);
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-family: var(--mono);
+  font-size: 11px; font-weight: 500; color: var(--red);
+  flex-shrink: 0;
+}
+.tl-line {
+  width: 1px; flex: 1; min-height: 20px;
+  background: var(--border); margin: 6px 0;
+}
+
+.tl-content { padding-top: 4px; }
+.tl-content h4 { font-size: 13px; font-weight: 600; margin-bottom: 4px; }
+.tl-content p { font-size: 12px; color: var(--g5); line-height: 1.55; }
+.tl-mono {
+  font-family: var(--mono);
+  font-size: 10px; color: var(--red);
+  background: var(--red-xl); padding: 1px 6px;
+  border-radius: 3px; border: 1px solid var(--red-b);
+}
+
+.sms-right { display: flex; flex-direction: column; gap: 14px; }
+
+.phone-mockup {
+  background: var(--g0);
+  border: 1px solid var(--border);
+  border-radius: 10px; overflow: hidden;
+  box-shadow: var(--shadow-md);
+}
+.phone-bar {
+  background: var(--g2); padding: 10px 14px;
+  border-bottom: 1px solid var(--border);
+  display: flex; gap: 10px; align-items: center;
+}
+.phone-avatar {
+  width: 28px; height: 28px;
+  background: var(--red-xl);
+  border: 1px solid var(--red-b);
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 12px;
+}
+.phone-contact { font-size: 12px; font-weight: 600; }
+.phone-num { font-family: var(--mono); font-size: 9px; color: var(--g5); }
+
+.phone-body { padding: 16px 14px; }
+.bubble {
+  background: var(--g2);
+  border: 1px solid var(--border);
+  border-radius: 8px 8px 8px 2px;
+  padding: 12px 14px;
+  max-width: 88%;
+}
+.bubble-text { font-size: 13px; line-height: 1.6; color: var(--g8); }
+.bubble-link { font-family: var(--mono); font-size: 10px; color: #1a5fa8; margin-top: 6px; word-break: break-all; }
+.bubble-time { font-family: var(--mono); font-size: 9px; color: var(--g4); margin-top: 8px; }
+
+.at-block {
+  background: var(--g0);
+  border: 1px solid var(--border);
+  border-radius: 10px; overflow: hidden;
+}
+.at-bar {
+  background: var(--g2); padding: 9px 14px;
+  border-bottom: 1px solid var(--border);
+  font-family: var(--mono);
+  font-size: 9px; letter-spacing: 0.12em;
+  text-transform: uppercase; color: var(--g5);
+}
+.at-body {
+  padding: 14px 16px;
+  font-family: var(--mono);
+  font-size: 11px; line-height: 2; color: var(--g5);
+}
+.at-cmd { color: var(--red); }
+.at-cmt { color: #bbb; font-style: italic; }
+
+/* ─── CONTRIBUTION ─── */
+.contribution { background: var(--g2); }
+
+.contrib-layout {
+  display: grid; grid-template-columns: 1fr 1fr;
+  gap: 48px; align-items: start; margin-top: 48px;
+}
+
+.contrib-list { display: flex; flex-direction: column; gap: 12px; }
+
+.contrib-card {
+  background: var(--g0);
+  border: 1px solid var(--border);
+  border-radius: 10px; padding: 18px 20px;
+  display: flex; gap: 14px;
+  transition: transform 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease;
+  cursor: default;
+}
+.contrib-card:hover {
+  transform: translateX(4px);
+  box-shadow: var(--shadow-md);
+  border-color: var(--red-b);
+}
+.contrib-n { font-size: 26px; font-weight: 700; color: rgba(192,57,43,0.12); line-height: 1; flex-shrink: 0; }
+.contrib-c h4 { font-size: 13px; font-weight: 600; margin-bottom: 4px; }
+.contrib-c p { font-size: 12px; color: var(--g5); line-height: 1.55; }
+
+.metrics-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+
+.metric-card {
+  background: var(--g0);
+  border: 1px solid var(--border);
+  border-radius: 10px; padding: 20px 18px;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  cursor: default;
+}
+.metric-card:hover { transform: translateY(-2px); box-shadow: var(--shadow-md); }
+.metric-val {
+  font-size: 36px; font-weight: 700;
+  letter-spacing: -2px; color: var(--red);
+  display: block; line-height: 1; margin-bottom: 8px;
+}
+.metric-val em { font-style: normal; font-size: 22px; letter-spacing: -1px; }
+.metric-lbl { font-size: 12px; color: var(--g5); line-height: 1.4; }
+
+/* ─── FUTURE ─── */
+.future { background: var(--g1); }
+
+.future-inner { max-width: 860px; margin: 48px auto 0; }
+
+.future-cards {
+  display: grid; grid-template-columns: repeat(3, 1fr);
+  gap: 14px; margin-top: 0;
+}
+
+.fut-card {
+  background: var(--g0);
+  border: 1px solid var(--border);
+  border-radius: 10px; padding: 22px 18px;
+  transition: transform 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease;
+  cursor: default;
+}
+.fut-card:hover {
+  transform: translateY(-3px);
+  box-shadow: var(--shadow-lg);
+  border-color: var(--red-b);
+}
+.fut-icon { font-size: 24px; margin-bottom: 12px; display: block; }
+.fut-name { font-size: 14px; font-weight: 600; margin-bottom: 6px; }
+.fut-desc { font-size: 12px; color: var(--g5); line-height: 1.55; }
+
+/* ─── FOOTER ─── */
+footer {
+  background: var(--g3);
+  border-top: 1px solid var(--border);
+  padding: 32px 80px;
+  display: flex; justify-content: space-between; align-items: center;
+}
+.footer-logo {
+  font-family: var(--mono);
+  font-size: 12px; font-weight: 500;
+  letter-spacing: 0.15em; text-transform: uppercase;
+  color: var(--red);
+}
+.footer-mid {
+  font-family: var(--mono);
+  font-size: 10px; color: var(--g5);
+  text-align: center; line-height: 1.7;
+}
+.footer-right {
+  font-family: var(--mono);
+  font-size: 10px; color: var(--g5);
+  text-align: right; line-height: 1.7;
+}
+.footer-right strong { color: var(--g7); font-weight: 500; display: block; font-size: 11px; }
+
+/* ─── RESPONSIVE ─── */
+@media(max-width: 960px) {
+  nav { padding: 0 20px; }
+  .nav-links { display: none; }
+  section { padding: 72px 20px; }
+  .hero { grid-template-columns: 1fr; padding-top: 56px; }
+  .hero-left { padding: 48px 20px 32px; }
+  .hero-right { padding: 0 20px 48px; }
+  .prob-layout, .pins-layout, .fw-grid, .sms-layout,
+  .contrib-layout, .hw-head { grid-template-columns: 1fr; gap: 28px; }
+  .flow-steps { grid-template-columns: 1fr 1fr; }
+  .hw-grid { grid-template-columns: 1fr 1fr; }
+  .future-cards { grid-template-columns: 1fr 1fr; }
+  footer { flex-direction: column; gap: 16px; padding: 24px 20px; text-align: center; }
+  .footer-right { text-align: center; }
+}
+</style>
+</head>
+<body>
+
+<!-- LOADER -->
+<div id="loader">
+  <div class="loader-logo">Vehicle Crash Alert System</div>
+  <div class="loader-bar-wrap"><div class="loader-bar"></div></div>
+</div>
+
+<!-- NAV -->
+<nav id="nav">
+  <div class="nav-logo">
+    <div class="nav-logo-dot"></div>
+    Crash Alert
+  </div>
+  <ul class="nav-links">
+    <li><a href="#problem">Problem</a></li>
+    <li><a href="#flow">How it Works</a></li>
+    <li><a href="#hardware">Hardware</a></li>
+    <li><a href="#firmware">Firmware</a></li>
+    <li><a href="#sms">SMS Pipeline</a></li>
+    <li><a href="#contribution">My Role</a></li>
+  </ul>
+  <div class="nav-pill"><div class="nav-pill-dot"></div>Monitoring Active</div>
+</nav>
+
+<!-- ══════════════ HERO ══════════════ -->
+<section class="hero">
+  <div class="hero-orb"></div>
+
+  <div class="hero-left">
+    <div class="hero-tag">Arduino · GSM · GPS · Safety IoT</div>
+
+    <h1 class="hero-h1">
+      Every<br>
+      <span class="accent">Second</span><br>
+      <span class="muted">Counts</span>
+    </h1>
+
+    <p class="hero-p">
+      A fully automatic crash detection and location alert system — detects impact through a 3-axis accelerometer and dispatches your GPS coordinates via SMS before you can reach your phone.
+    </p>
+
+    <div class="hero-actions">
+      <a href="#flow" class="btn-solid"><span>How It Works</span></a>
+      <a href="#firmware" class="btn-ghost">View Code</a>
+    </div>
+
+    <div class="hero-stats">
+      <div class="hstat">
+        <span class="hstat-n"><em>3</em></span>
+        <span class="hstat-l">Axis Detection</span>
+      </div>
+      <div class="hstat">
+        <span class="hstat-n">&lt;<em>8s</em></span>
+        <span class="hstat-l">Alert Speed</span>
+      </div>
+      <div class="hstat">
+        <span class="hstat-n"><em>0</em></span>
+        <span class="hstat-l">Manual Steps</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="hero-right">
+    <div class="device">
+      <div class="dev-bar">
+        <span class="dev-bar-title">Live Monitor · Arduino</span>
+        <span class="dev-live">Armed</span>
+      </div>
+
+      <div class="dev-accel">
+        <div class="dev-section-label">Accelerometer — A0 / A1 / A2</div>
+        <div class="axis-row">
+          <span class="axis-lbl">X</span>
+          <div class="axis-track"><div class="axis-fill ax" id="barX" style="width:57%"></div></div>
+          <span class="axis-num" id="vX">733</span>
+        </div>
+        <div class="axis-row">
+          <span class="axis-lbl">Y</span>
+          <div class="axis-track"><div class="axis-fill ay" id="barY" style="width:52%"></div></div>
+          <span class="axis-num" id="vY">705</span>
+        </div>
+        <div class="axis-row">
+          <span class="axis-lbl">Z</span>
+          <div class="axis-track"><div class="axis-fill az" id="barZ" style="width:51%"></div></div>
+          <span class="axis-num" id="vZ">704</span>
+        </div>
+      </div>
+
+      <div class="dev-gps">
+        <div class="dev-section-label">GPS · NEO-6M · SoftwareSerial</div>
+        <div class="gps-row">
+          <div class="gps-cell">
+            <div class="gps-cell-lbl">Latitude</div>
+            <div class="gps-cell-val" id="lat">13.082700</div>
+          </div>
+          <div class="gps-cell">
+            <div class="gps-cell-lbl">Longitude</div>
+            <div class="gps-cell-val" id="lng">80.270700</div>
+          </div>
+        </div>
+        <div class="gps-maps">🗺 maps.google.com/?q=<span id="mc">13.082700,80.270700</span></div>
+      </div>
+
+      <div class="dev-alert">
+        <div class="alert-card" id="alertCard">
+          <div class="alert-head" id="alertHead">SYSTEM READY</div>
+          <div class="alert-sub" id="alertSub">Monitoring accelerometer — threshold ±30 units</div>
+          <div class="sms-confirmed" id="smsDone">SMS dispatched to emergency contact</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════ PROBLEM ══════════════ -->
+<section class="problem" id="problem">
+  <div class="stag r">The Challenge</div>
+  <h2 class="sh r delay-1">Accidents kill<br><span class="lt">because help arrives late</span></h2>
+
+  <div class="prob-layout">
+    <div class="prob-items">
+      <div class="prob-item r delay-1">
+        <div class="prob-item-n">01</div>
+        <div>
+          <h4>Victim Cannot Call</h4>
+          <p>Severe crashes often render the driver unconscious or immobile — physically unable to dial emergency services or describe their location.</p>
+        </div>
+      </div>
+      <div class="prob-item r delay-2">
+        <div class="prob-item-n">02</div>
+        <div>
+          <h4>Exact Location Unknown</h4>
+          <p>Even conscious victims struggle to describe precise crash locations on highways, rural roads or unfamiliar areas — delaying ambulance dispatch.</p>
+        </div>
+      </div>
+      <div class="prob-item r delay-3">
+        <div class="prob-item-n">03</div>
+        <div>
+          <h4>The Golden Hour</h4>
+          <p>Trauma medicine defines the first 60 minutes as critical. Each minute of delayed response exponentially increases fatality risk and permanent injury.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="sol-card r-right">
+      <div class="sol-card-head">— Our Solution</div>
+      <div class="sol-card-body">
+        <ul class="sol-list">
+          <li>3-axis accelerometer detects sudden g-force deviation automatically — no human action</li>
+          <li>NEO-6M GPS captures precise coordinates at the moment of impact</li>
+          <li>SIM800 GSM sends SMS with direct Google Maps link to emergency contact</li>
+          <li>10-second cooldown prevents repeated SMS floods from post-crash vibration</li>
+          <li>Boot-time SMS confirms system readiness — tests the full pipeline on startup</li>
+          <li>Fully standalone — no internet, no app, no smartphone required by victim</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════ FLOW ══════════════ -->
+<section class="flow" id="flow">
+  <div class="stag r">Working Principle</div>
+  <h2 class="sh r delay-1">Four steps from<br><span class="lt">crash to rescue</span></h2>
+
+  <div class="flow-steps r delay-2">
+    <div class="flow-step">
+      <div class="flow-step-hover-bar"></div>
+      <div class="flow-step-n">01</div>
+      <span class="flow-step-icon">📡</span>
+      <h3>Continuous Monitoring</h3>
+      <p>Accelerometer reads X, Y, Z axes every 500ms. Baseline calibrated at startup — steady-state values stored as reference.</p>
+    </div>
+    <div class="flow-step">
+      <div class="flow-step-hover-bar"></div>
+      <div class="flow-step-n">02</div>
+      <span class="flow-step-icon">💥</span>
+      <h3>Impact Detected</h3>
+      <p>Crash g-force causes axis deviation beyond ±30 units from baseline. Any single axis triggers the alert pipeline immediately.</p>
+    </div>
+    <div class="flow-step">
+      <div class="flow-step-hover-bar"></div>
+      <div class="flow-step-n">03</div>
+      <span class="flow-step-icon">🛰️</span>
+      <h3>GPS Coordinates</h3>
+      <p>TinyGPS++ decodes live NMEA sentences from NEO-6M. Lat/lng extracted at 6-decimal precision — encoded as Google Maps URL.</p>
+    </div>
+    <div class="flow-step">
+      <div class="flow-step-hover-bar"></div>
+      <div class="flow-step-n">04</div>
+      <span class="flow-step-icon">📱</span>
+      <h3>SMS Dispatched</h3>
+      <p>SIM800 executes AT command sequence — text mode, recipient, message body, Ctrl+Z. Full cycle completes in under 8 seconds.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════ HARDWARE ══════════════ -->
+<section class="hardware" id="hardware">
+  <div class="hw-head">
+    <div>
+      <div class="stag r">Components</div>
+      <h2 class="sh r delay-1">Hardware<br><span class="lt">breakdown</span></h2>
+    </div>
+    <p class="sp r delay-2">Each component chosen for standalone reliability — no WiFi, no cloud dependency, functional in any location with GSM network coverage.</p>
+  </div>
+
+  <div class="hw-grid">
+    <div class="hw-card c1 r delay-1">
+      <span class="hw-icon">🤖</span>
+      <div class="hw-name">Arduino Board</div>
+      <div class="hw-chip">ATmega328P</div>
+      <p class="hw-desc">Main controller running the firmware. Manages two SoftwareSerial channels and reads analog accelerometer values every 500ms.</p>
+    </div>
+    <div class="hw-card c2 r delay-2">
+      <span class="hw-icon">📶</span>
+      <div class="hw-name">GSM Module</div>
+      <div class="hw-chip">SIM800 / SIM900</div>
+      <p class="hw-desc">Sends SMS via AT command protocol over SoftwareSerial (pins 5/7). Requires active SIM with SMS plan — works on any GSM network.</p>
+    </div>
+    <div class="hw-card c3 r delay-3">
+      <span class="hw-icon">🛰️</span>
+      <div class="hw-name">GPS Module</div>
+      <div class="hw-chip">NEO-6M · TinyGPS++</div>
+      <p class="hw-desc">Parses NMEA satellite sentences via SoftwareSerial (pins 12/11). TinyGPS++ extracts lat/lng with 6-decimal accuracy — ~0.1m precision.</p>
+    </div>
+    <div class="hw-card c4 r delay-1">
+      <span class="hw-icon">📐</span>
+      <div class="hw-name">Accelerometer</div>
+      <div class="hw-chip">3-Axis Analog</div>
+      <p class="hw-desc">Analog X/Y/Z output on pins A0–A2. Values 0–1023. Deviation of ±30 from baseline on any axis triggers crash detection logic.</p>
+    </div>
+    <div class="hw-card c5 r delay-2">
+      <span class="hw-icon">📟</span>
+      <div class="hw-name">SIM Card</div>
+      <div class="hw-chip">SMS Enabled</div>
+      <p class="hw-desc">Standard SIM with active SMS pack. Emergency contact number stored in firmware — changeable in a single line of code.</p>
+    </div>
+    <div class="hw-card c6 r delay-3">
+      <span class="hw-icon">⚡</span>
+      <div class="hw-name">Power Supply</div>
+      <div class="hw-chip">5V · 2A Peak</div>
+      <p class="hw-desc">Stable 5V for Arduino. GSM module demands 2A peak during SMS transmission — dedicated regulated supply prevents voltage drops.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════ PINS ══════════════ -->
+<section class="pins" id="pins">
+  <div class="stag r">Connections</div>
+  <h2 class="sh r delay-1">Pin<br><span class="lt">configuration</span></h2>
+
+  <div class="pins-layout">
+    <div class="pin-table r-left">
+      <div class="pin-thead">
+        <span>Component</span><span>Signal</span><span>Pin</span>
+      </div>
+      <div class="pin-row"><div class="pin-comp"><div class="pin-dot" style="background:var(--red)"></div>GSM Module</div><div class="pin-sig">TX</div><div><span class="pin-num">D5</span></div></div>
+      <div class="pin-row"><div class="pin-comp"><div class="pin-dot" style="background:var(--red)"></div>GSM Module</div><div class="pin-sig">RX</div><div><span class="pin-num">D7</span></div></div>
+      <div class="pin-row"><div class="pin-comp"><div class="pin-dot" style="background:#1a7a3c"></div>GPS Module</div><div class="pin-sig">TX</div><div><span class="pin-num">D12</span></div></div>
+      <div class="pin-row"><div class="pin-comp"><div class="pin-dot" style="background:#1a7a3c"></div>GPS Module</div><div class="pin-sig">RX</div><div><span class="pin-num">D11</span></div></div>
+      <div class="pin-row"><div class="pin-comp"><div class="pin-dot" style="background:#1a6faa"></div>Accelerometer</div><div class="pin-sig">X-Axis</div><div><span class="pin-num">A0</span></div></div>
+      <div class="pin-row"><div class="pin-comp"><div class="pin-dot" style="background:#1a6faa"></div>Accelerometer</div><div class="pin-sig">Y-Axis</div><div><span class="pin-num">A1</span></div></div>
+      <div class="pin-row"><div class="pin-comp"><div class="pin-dot" style="background:#1a6faa"></div>Accelerometer</div><div class="pin-sig">Z-Axis</div><div><span class="pin-num">A2</span></div></div>
+    </div>
+
+    <div class="code-block r-right">
+      <div class="cb-bar">
+        <div class="cb-dots"><span class="d-r"></span><span class="d-y"></span><span class="d-g"></span></div>
+        <span class="cb-fname">detect_crash.ino</span>
+      </div>
+      <div class="cb-code">
+<span class="cm">// Baseline set at steady-state</span>
+<span class="ct">int</span> bX=<span class="cn">733</span>, bY=<span class="cn">705</span>, bZ=<span class="cn">704</span>;
+<span class="ck">const</span> <span class="ct">int</span> THRESHOLD = <span class="cn">30</span>;
+
+<span class="ct">bool</span> <span class="cf">detectCrash</span>() {
+  <span class="ct">int</span> x = <span class="cf">analogRead</span>(A0);
+  <span class="ct">int</span> y = <span class="cf">analogRead</span>(A1);
+  <span class="ct">int</span> z = <span class="cf">analogRead</span>(A2);
+
+  <span class="cm">// Check any axis deviation</span>
+  <span class="ck">if</span> (<span class="cf">abs</span>(x-bX) > THRESHOLD ||
+      <span class="cf">abs</span>(y-bY) > THRESHOLD ||
+      <span class="cf">abs</span>(z-bZ) > THRESHOLD) {
+    bX=x; bY=y; bZ=z;
+    <span class="ck">return</span> <span class="cr">true</span>;
+  }
+  <span class="ck">return</span> <span class="cr">false</span>;
+}
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════ FIRMWARE ══════════════ -->
+<section class="firmware" id="firmware">
+  <div class="stag r">Source Code</div>
+  <h2 class="sh r delay-1">Firmware<br><span class="lt">deep dive</span></h2>
+
+  <div class="fw-grid">
+    <div class="code-block r delay-1">
+      <div class="cb-bar">
+        <div class="cb-dots"><span class="d-r"></span><span class="d-y"></span><span class="d-g"></span></div>
+        <span class="cb-fname">main_loop.ino</span>
+      </div>
+      <div class="cb-code">
+<span class="ck">void</span> <span class="cf">loop</span>() {
+  <span class="cf">readGPS</span>(); <span class="cm">// parse NMEA sentences</span>
+
+  <span class="ck">if</span> (<span class="cf">detectCrash</span>()) {
+    String msg = <span class="cs">"⚠️ Movement Detected!\n"</span>;
+
+    <span class="ck">if</span> (latitude != <span class="cs">""</span>) {
+      msg += <span class="cs">"Location: https://maps."</span>
+           + <span class="cs">"google.com/?q="</span>
+           + latitude + <span class="cs">","</span> + longitude;
+    } <span class="ck">else</span> {
+      msg += <span class="cs">"GPS not available yet."</span>;
+    }
+    <span class="cf">sendSMS</span>(msg);
+    <span class="cf">delay</span>(<span class="cn">10000</span>); <span class="cm">// spam guard</span>
+  }
+  <span class="cf">delay</span>(<span class="cn">500</span>);
+}
+      </div>
+    </div>
+
+    <div class="code-block r delay-2">
+      <div class="cb-bar">
+        <div class="cb-dots"><span class="d-r"></span><span class="d-y"></span><span class="d-g"></span></div>
+        <span class="cb-fname">read_gps.ino</span>
+      </div>
+      <div class="cb-code">
+<span class="cm">// TinyGPS++ parses NMEA sentences</span>
+<span class="ck">void</span> <span class="cf">readGPS</span>() {
+  <span class="ck">while</span> (gpsSerial.<span class="cf">available</span>()) {
+    gps.<span class="cf">encode</span>(gpsSerial.<span class="cf">read</span>());
+  }
+
+  <span class="ck">if</span> (gps.location.<span class="cf">isValid</span>()) {
+    <span class="cm">// 6dp ≈ 0.1m precision</span>
+    latitude = String(
+      gps.location.<span class="cf">lat</span>(), <span class="cn">6</span>);
+    longitude = String(
+      gps.location.<span class="cf">lng</span>(), <span class="cn">6</span>);
+  }
+}
+      </div>
+    </div>
+
+    <div class="code-block r delay-3">
+      <div class="cb-bar">
+        <div class="cb-dots"><span class="d-r"></span><span class="d-y"></span><span class="d-g"></span></div>
+        <span class="cb-fname">send_sms.ino</span>
+      </div>
+      <div class="cb-code">
+<span class="ck">void</span> <span class="cf">sendSMS</span>(String text) {
+  <span class="cm">// 1. Set text mode</span>
+  gsmSerial.<span class="cf">println</span>(<span class="cs">"AT+CMGF=1"</span>);
+  <span class="cf">delay</span>(<span class="cn">1000</span>);
+
+  <span class="cm">// 2. Recipient number</span>
+  gsmSerial.<span class="cf">println</span>(
+    <span class="cs">"AT+CMGS=\"+91XXXXXXXXXX\""</span>);
+  <span class="cf">delay</span>(<span class="cn">1000</span>);
+
+  <span class="cm">// 3. Message body</span>
+  gsmSerial.<span class="cf">print</span>(text);
+  <span class="cf">delay</span>(<span class="cn">1000</span>);
+
+  <span class="cm">// 4. Ctrl+Z → dispatch</span>
+  gsmSerial.<span class="cf">write</span>(<span class="cn">26</span>);
+  <span class="cf">delay</span>(<span class="cn">5000</span>);
+}
+      </div>
+    </div>
+
+    <div class="code-block r delay-4">
+      <div class="cb-bar">
+        <div class="cb-dots"><span class="d-r"></span><span class="d-y"></span><span class="d-g"></span></div>
+        <span class="cb-fname">setup.ino</span>
+      </div>
+      <div class="cb-code">
+<span class="cm">// Dual SoftwareSerial channels</span>
+SoftwareSerial <span class="cf">gsmSerial</span>(<span class="cn">5</span>, <span class="cn">7</span>);
+SoftwareSerial <span class="cf">gpsSerial</span>(<span class="cn">12</span>, <span class="cn">11</span>);
+TinyGPSPlus gps;
+
+<span class="ck">void</span> <span class="cf">setup</span>() {
+  Serial.<span class="cf">begin</span>(<span class="cn">9600</span>);
+  gsmSerial.<span class="cf">begin</span>(<span class="cn">9600</span>);
+  gpsSerial.<span class="cf">begin</span>(<span class="cn">9600</span>);
+
+  <span class="cf">delay</span>(<span class="cn">1000</span>);
+  <span class="cm">// Boot confirmation</span>
+  <span class="cf">sendSMS</span>(<span class="cs">"System is ready."</span>);
+}
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════ SMS ══════════════ -->
+<section class="sms" id="sms">
+  <div class="stag r">Alert Pipeline</div>
+  <h2 class="sh r delay-1">Crash to SMS<br><span class="lt">in under 8 seconds</span></h2>
+
+  <div class="sms-layout">
+    <div class="timeline r-left">
+      <div class="tl-item">
+        <div class="tl-left"><div class="tl-num">1</div><div class="tl-line"></div></div>
+        <div class="tl-content"><h4>Impact Registered</h4><p>Any axis exceeds <span class="tl-mono">±30</span> deviation — crash flag set, pipeline begins immediately</p></div>
+      </div>
+      <div class="tl-item">
+        <div class="tl-left"><div class="tl-num">2</div><div class="tl-line"></div></div>
+        <div class="tl-content"><h4>GPS Coordinates Read</h4><p>Most recent valid <span class="tl-mono">lat/lng</span> from NEO-6M appended as Google Maps URL</p></div>
+      </div>
+      <div class="tl-item">
+        <div class="tl-left"><div class="tl-num">3</div><div class="tl-line"></div></div>
+        <div class="tl-content"><h4>AT+CMGF=1</h4><p>GSM switched to <span class="tl-mono">text mode</span> via SoftwareSerial — 1s settle delay</p></div>
+      </div>
+      <div class="tl-item">
+        <div class="tl-left"><div class="tl-num">4</div><div class="tl-line"></div></div>
+        <div class="tl-content"><h4>Recipient Set</h4><p><span class="tl-mono">AT+CMGS</span> command with hardcoded emergency number — waits for &gt; prompt</p></div>
+      </div>
+      <div class="tl-item">
+        <div class="tl-left"><div class="tl-num">5</div><div class="tl-line"></div></div>
+        <div class="tl-content"><h4>Message + Ctrl+Z</h4><p>Text written to GSM buffer — <span class="tl-mono">ASCII 26</span> signals end and triggers network dispatch</p></div>
+      </div>
+      <div class="tl-item">
+        <div class="tl-left"><div class="tl-num">6</div></div>
+        <div class="tl-content"><h4>10s Cooldown</h4><p><span class="tl-mono">delay(10000)</span> blocks repeated triggers from post-crash vibration and rattling</p></div>
+      </div>
+    </div>
+
+    <div class="sms-right r-right">
+      <div class="phone-mockup">
+        <div class="phone-bar">
+          <div class="phone-avatar">🆘</div>
+          <div>
+            <div class="phone-contact">Emergency Contact</div>
+            <div class="phone-num">+91 93903 06225</div>
+          </div>
+        </div>
+        <div class="phone-body">
+          <div class="bubble">
+            <div class="bubble-text">⚠️ Movement Detected!<br>
+              <div class="bubble-link">Location: https://maps.google.com/?q=13.082700,80.270700</div>
+            </div>
+          </div>
+          <div class="bubble-time">Just now · Delivered ✓✓</div>
+        </div>
+      </div>
+
+      <div class="at-block">
+        <div class="at-bar">AT Command Sequence — SIM800</div>
+        <div class="at-body">
+          <div><span class="at-cmd">AT+CMGF=1</span>  <span class="at-cmt">// text mode</span></div>
+          <div><span class="at-cmd">AT+CMGS="+91XXXXXXXXXX"</span></div>
+          <div><span class="at-cmt">// &gt; prompt received</span></div>
+          <div>⚠️ Movement Detected!</div>
+          <div>Location: maps.google.com/?q=...</div>
+          <div><span class="at-cmd">[Ctrl+Z]</span>  <span class="at-cmt">// ASCII 26 → send</span></div>
+          <div><span class="at-cmt">// +CMGS: 47 → success ✓</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════ CONTRIBUTION ══════════════ -->
+<section class="contribution" id="contribution">
+  <div class="stag r">My Role</div>
+  <h2 class="sh r delay-1">What<br><span class="lt">I built</span></h2>
+
+  <div class="contrib-layout">
+    <div class="contrib-list">
+      <div class="contrib-card r delay-1">
+        <div class="contrib-n">01</div>
+        <div class="contrib-c">
+          <h4>Accelerometer Threshold Logic</h4>
+          <p>Calibrated baseline X/Y/Z for steady-state. Implemented 3-axis deviation check with ±30 unit threshold — updates baseline on detection to track new position.</p>
+        </div>
+      </div>
+      <div class="contrib-card r delay-2">
+        <div class="contrib-n">02</div>
+        <div class="contrib-c">
+          <h4>Dual SoftwareSerial Management</h4>
+          <p>Managed concurrent GSM (pins 5/7) and GPS (pins 12/11) SoftwareSerial channels on a single Arduino without bus collision.</p>
+        </div>
+      </div>
+      <div class="contrib-card r delay-3">
+        <div class="contrib-n">03</div>
+        <div class="contrib-c">
+          <h4>GPS Parsing with TinyGPS++</h4>
+          <p>Integrated TinyGPS++ to continuously decode NMEA sentences. Extracts valid lat/lng at 6-decimal precision and encodes as Google Maps URL.</p>
+        </div>
+      </div>
+      <div class="contrib-card r delay-4">
+        <div class="contrib-n">04</div>
+        <div class="contrib-c">
+          <h4>AT Command SMS Pipeline</h4>
+          <p>Built complete SMS dispatch sequence — CMGF text mode, CMGS recipient, message body, ASCII 26 Ctrl+Z — with calibrated timing delays for reliability.</p>
+        </div>
+      </div>
+      <div class="contrib-card r">
+        <div class="contrib-n">05</div>
+        <div class="contrib-c">
+          <h4>Spam Prevention + Boot Test</h4>
+          <p>10-second delay prevents SMS flooding from post-crash vibration. Boot-time "System is ready" SMS validates full GSM pipeline on every startup.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="metrics-grid r-right">
+      <div class="metric-card">
+        <span class="metric-val">&lt;<em>8s</em></span>
+        <div class="metric-lbl">Crash to SMS delivery — full AT command cycle</div>
+      </div>
+      <div class="metric-card">
+        <span class="metric-val">3</span>
+        <div class="metric-lbl">Axes monitored simultaneously — X, Y, Z</div>
+      </div>
+      <div class="metric-card">
+        <span class="metric-val">0</span>
+        <div class="metric-lbl">Human actions required after crash event</div>
+      </div>
+      <div class="metric-card">
+        <span class="metric-val">±<em>0.1m</em></span>
+        <div class="metric-lbl">GPS precision with 6-decimal coordinates</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════ FUTURE ══════════════ -->
+<section class="future" id="future">
+  <div class="stag r">Roadmap</div>
+  <h2 class="sh r delay-1">What's<br><span class="lt">next</span></h2>
+
+  <div class="future-inner">
+    <div class="future-cards">
+      <div class="fut-card r delay-1">
+        <span class="fut-icon">📞</span>
+        <div class="fut-name">Auto Voice Call</div>
+        <p class="fut-desc">Initiate automatic voice call to emergency services using AT+ATD — audio confirmation alongside SMS.</p>
+      </div>
+      <div class="fut-card r delay-2">
+        <span class="fut-icon">☁️</span>
+        <div class="fut-name">IoT Cloud Dashboard</div>
+        <p class="fut-desc">Stream crash events and GPS history to cloud — real-time fleet monitoring and incident analytics.</p>
+      </div>
+      <div class="fut-card r delay-3">
+        <span class="fut-icon">📱</span>
+        <div class="fut-name">Mobile App</div>
+        <p class="fut-desc">Companion app for emergency contacts — live map tracking, push alerts and incident history log.</p>
+      </div>
+      <div class="fut-card r delay-1">
+        <span class="fut-icon">🧠</span>
+        <div class="fut-name">Smart Classification</div>
+        <p class="fut-desc">ML model distinguishing actual crashes from speed bumps and potholes — reduces false positives.</p>
+      </div>
+      <div class="fut-card r delay-2">
+        <span class="fut-icon">🔋</span>
+        <div class="fut-name">Low Power Mode</div>
+        <p class="fut-desc">Sleep between polls — wake on interrupt from accelerometer threshold. Extend battery life significantly.</p>
+      </div>
+      <div class="fut-card r delay-3">
+        <span class="fut-icon">🏥</span>
+        <div class="fut-name">Hospital Integration</div>
+        <p class="fut-desc">Direct API integration with nearby hospitals and emergency services — automated dispatch with crash severity data.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════ FOOTER ══════════════ -->
+<footer>
+  <div class="footer-logo">Crash Alert</div>
+  <div class="footer-mid">
+    Arduino · SIM800 GSM · NEO-6M GPS<br>
+    SoftwareSerial · TinyGPS++ · AT Commands
+  </div>
+  <div class="footer-right">
+    <strong>Hemanth Kumar Giduturi</strong>
+    Electronics & Communication Engineering
+  </div>
+</footer>
+
+<script>
+// ── LOADER ──
+window.addEventListener('load', () => {
+  setTimeout(() => {
+    document.getElementById('loader').classList.add('hidden');
+  }, 2000);
+});
+
+// ── NAV SCROLL ──
+window.addEventListener('scroll', () => {
+  document.getElementById('nav').classList.toggle('scrolled', window.scrollY > 40);
+});
+
+// ── SCROLL REVEAL ──
+const revealEls = document.querySelectorAll('.r, .r-left, .r-right');
+const revObs = new IntersectionObserver((entries) => {
+  entries.forEach(e => {
+    if (e.isIntersecting) e.target.classList.add('up');
+  });
+}, { threshold: 0.1, rootMargin: '0px 0px -40px 0px' });
+revealEls.forEach(el => revObs.observe(el));
+
+// ── SMOOTH SCROLL ──
+document.querySelectorAll('a[href^="#"]').forEach(a => {
+  a.addEventListener('click', e => {
+    e.preventDefault();
+    const t = document.querySelector(a.getAttribute('href'));
+    if (t) t.scrollIntoView({ behavior: 'smooth' });
+  });
+});
+
+// ── LIVE ACCELEROMETER SIMULATION ──
+let bx = 733, by = 705, bz = 704;
+let crashed = false, onCooldown = false;
+
+function simAccel() {
+  if (onCooldown) return;
+
+  let dx = (Math.random() - 0.5) * 7;
+  let dy = (Math.random() - 0.5) * 7;
+  let dz = (Math.random() - 0.5) * 6;
+
+  // Trigger crash every ~18s
+  if (Math.random() < 0.012 && !crashed) {
+    const sign = () => Math.random() > 0.5 ? 1 : -1;
+    dx = sign() * (55 + Math.random() * 70);
+    dy = sign() * (40 + Math.random() * 55);
+    crashed = true;
+
+    // Alert state
+    setTimeout(() => {
+      const card = document.getElementById('alertCard');
+      card.classList.add('triggered');
+      document.getElementById('alertHead').textContent = '⚠ CRASH DETECTED';
+      document.getElementById('alertSub').textContent = 'Fetching GPS — dispatching SMS...';
+    }, 200);
+
+    // SMS confirmed
+    setTimeout(() => {
+      document.getElementById('alertHead').textContent = 'SMS SENT ✓';
+      document.getElementById('alertSub').textContent = 'Alert delivered to emergency contact';
+      document.getElementById('smsDone').classList.add('show');
+      onCooldown = true;
+    }, 2200);
+
+    // Reset
+    setTimeout(() => {
+      const card = document.getElementById('alertCard');
+      card.classList.remove('triggered');
+      document.getElementById('alertHead').textContent = 'SYSTEM READY';
+      document.getElementById('alertSub').textContent = 'Monitoring accelerometer — threshold ±30 units';
+      document.getElementById('smsDone').classList.remove('show');
+      crashed = false;
+      onCooldown = false;
+      bx = parseFloat(document.getElementById('vX').textContent);
+      by = parseFloat(document.getElementById('vY').textContent);
+      bz = parseFloat(document.getElementById('vZ').textContent);
+    }, 5000);
+  }
+
+  const nx = Math.max(0, Math.min(1023, bx + dx));
+  const ny = Math.max(0, Math.min(1023, by + dy));
+  const nz = Math.max(0, Math.min(1023, bz + dz));
+
+  if (!crashed) { bx = nx; by = ny; bz = nz; }
+
+  document.getElementById('vX').textContent = Math.round(nx);
+  document.getElementById('vY').textContent = Math.round(ny);
+  document.getElementById('vZ').textContent = Math.round(nz);
+  document.getElementById('barX').style.width = (nx / 1023 * 100) + '%';
+  document.getElementById('barY').style.width = (ny / 1023 * 100) + '%';
+  document.getElementById('barZ').style.width = (nz / 1023 * 100) + '%';
+}
+
+setInterval(simAccel, 550);
+
+// ── GPS DRIFT ──
+let lat = 13.082700, lng = 80.270700;
+setInterval(() => {
+  lat += (Math.random() - 0.5) * 0.00008;
+  lng += (Math.random() - 0.5) * 0.00008;
+  const ls = lat.toFixed(6), lo = lng.toFixed(6);
+  document.getElementById('lat').textContent = ls;
+  document.getElementById('lng').textContent = lo;
+  document.getElementById('mc').textContent = ls + ',' + lo;
+}, 2800);
+</script>
+</body>
+</html>
