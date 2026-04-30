@@ -5,6 +5,8 @@ The Vehicle Crash Alert System is an Arduino-based safety solution that detects 
 
 ---
 
+## ⚙ Learn more about this project on https://crash-web-nine.vercel.app/
+
 ## 🎯 Features
 - Real-time crash detection  
 - GPS-based live location tracking  
